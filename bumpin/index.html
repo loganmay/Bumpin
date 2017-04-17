@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Bumpin'</title>
+    <style>
+    @import url('https://fonts.googleapis.com/css?family=Lato');
+    html {
+      background-color: rgb(0,0,56);
+    }
+    body {
+      margin: 0;
+    }
+    .bottom, .top {
+      display:block;
+    }
+
+    button {
+      border: 1px solid white;
+      border-radius: 3px;
+      background-color: rgba(255,255,255,0.1);
+      color: white;
+      font-family: 'Lato';
+      font-size: 16px;
+      padding: 15px;
+      margin-right: 15px;
+    }
+
+    button:hover {
+      background-color: rgba(255,255,255,0.3);
+      cursor: pointer;
+    }
+
+    h1 {
+      color: white;
+      font-family: 'Lato';
+      text-align: center;
+    }
+
+    .header-wrapper {
+      text-align: center;
+    }
+    </style>
+  </head>
+
+  <body>
+    <audio id="audioElement">
+      <source src="/assets/bloodflood.mp3" type="audio/mpeg">
+      <p>Your browser does not support audio... :/  Get Google Chrome</p>
+    </audio>
+    <div class="header-wrapper">
+      <h1>bumpin</h1>
+      <button onclick="document.getElementById('audioElement').play()">Play the Audio</button>
+      <button onclick="document.getElementById('audioElement').pause()">Pause the Audio</button>
+      <button onclick="document.getElementById('audioElement').volume+=0.1">Increase Volume</button>
+      <button onclick="document.getElementById('audioElement').volume-=0.1">Decrease Volume</button>
+  </div>
+  <script src="https://d3js.org/d3.v3.min.js" crossorigin="anonymous"></script>
+  <script>
+  // Cross browser context
+  var AudioContext = window.AudioContext || window.webkitAudioContext;
+  // Construct an AudioContext
+  var audioCtx = new AudioContext();
+  // Get source element from html
+  var audioElement = document.getElementById('audioElement');
+  audioElement.crossOrigin = "anonymous";
+  // Turn element into a MediaElementSourceNode
+  var audioSrc = audioCtx.createMediaElementSource(audioElement);
+  // Create an analyser
+  var analyser = audioCtx.createAnalyser();
+  // Connect source to analyser and destination
+  audioSrc.connect(analyser);
+  audioSrc.connect(audioCtx.destination);
+  // Array to store audio data
+  var frequencyData = new Uint8Array(200);
+  // Set size variables
+  var boundingRect = document.getElementsByTagName("BODY")[0].getBoundingClientRect();
+  var svgHeight = '300';
+  var svgWidth = boundingRect.width;
+  var barPadding = '0';
+  // Create SVG
+  function createSvg(parent, height, width) {
+    return d3.select(parent).append('svg').attr('height', height).attr('width', width);
+  }
+  var svgTop = createSvg('body', svgHeight, svgWidth).attr('class', 'top');
+  var svgBottom = createSvg('body', svgHeight, svgWidth).attr('class', 'bottom');
+   // Create top rectangles
+   svgTop.selectAll('rect')
+      .data(frequencyData)
+      .enter()
+      .append('rect')
+      .attr('class', 'top')
+      .attr('x', function (d, i) {
+         return i * (svgWidth / frequencyData.length);
+      })
+      .attr('width', svgWidth / frequencyData.length - barPadding)
+      .attr('y', 0)
+      .attr('transform', 'translate(0,' + svgHeight + ') scale(1,-1)' );
+    // Create bottom rectangles
+    svgBottom.selectAll('rect')
+       .data(frequencyData)
+       .enter()
+       .append('rect')
+       .attr('class', 'bottom')
+       .attr('x', function (d, i) {
+          return i * (svgWidth / frequencyData.length);
+       })
+       .attr('width', svgWidth / frequencyData.length - barPadding)
+       .attr('y', 0);
+  // Continuously loop and update chart with frequency data.
+  function renderChart() {
+     requestAnimationFrame(renderChart);
+     // Copy frequency data to frequencyData array.
+     analyser.getByteFrequencyData(frequencyData);
+     var rand = Math.floor(Math.random() * 255);
+     rand = 0;
+     // Update bottom rectangles
+     svgBottom.selectAll('.bottom')
+        .data(frequencyData)
+        .attr('height', function(d) {
+           return d;
+        })
+        .attr('fill', function(d) {
+           return 'rgb(0,' + rand + ', ' + d + ')';
+        });
+      // Update top rectangles
+      svgTop.selectAll('.top')
+         .data(frequencyData)
+         .attr('height', function(d) {
+            return d;
+         })
+         .attr('fill', function(d) {
+            return 'rgb(0,' + rand + ', ' + d + ')';
+         });
+  }
+  // Run the loop
+  renderChart();
+  </script>
+  </body>
+</html>
